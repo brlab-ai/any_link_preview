@@ -19,6 +19,7 @@ dependencies:
   shared_preferences: ^2.0.15
   string_validator: ^0.3.0
   url_launcher: ^6.1.4
+  charset_converter: any
 
 dev_dependencies:
   flutter_test:

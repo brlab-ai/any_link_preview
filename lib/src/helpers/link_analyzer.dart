@@ -2,6 +2,7 @@ import 'dart:async' as async;
 import 'dart:convert';
 
 import 'package:any_link_preview/any_link_preview.dart';
+import 'package:charset_converter/charset_converter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:html/dom.dart' show Document;
 import 'package:html/parser.dart';
@@ -11,8 +12,8 @@ import 'package:string_validator/string_validator.dart';
 import '../parser/html_parser.dart';
 import '../parser/json_ld_parser.dart';
 import '../parser/og_parser.dart';
-import '../parser/twitter_parser.dart';
 import '../parser/other_parser.dart';
+import '../parser/twitter_parser.dart';
 import '../parser/util.dart';
 import 'cache_manager.dart';
 
@@ -99,7 +100,7 @@ class LinkAnalyzer {
         return info;
       }
 
-      final document = responseToDocument(response);
+      final document = await responseToDocument(response);
       if (document == null) return info;
 
       final data_ = _extractMetadata(document, url: url);
@@ -119,13 +120,22 @@ class LinkAnalyzer {
   }
 
   /// Takes an [http.Response] and returns a [html.Document]
-  static Document? responseToDocument(http.Response response) {
+  static Future<Document?> responseToDocument(http.Response response) async {
     if (response.statusCode != 200) return null;
 
     Document? document;
     try {
       document = parse(utf8.decode(response.bodyBytes));
     } catch (err) {
+      final headerContentType = response.headers['content-type'];
+      if (headerContentType != null) {
+        final charset = headerContentType.split('charset=').last;
+        // debugPrint('${await CharsetConverter.checkAvailability(charset)}');
+        // debugPrint(await CharsetConverter.decode(charset, response.bodyBytes));
+        document =
+            parse(await CharsetConverter.decode(charset, response.bodyBytes));
+      }
+
       return document;
     }
 
